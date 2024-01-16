@@ -2,8 +2,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import reverse, redirect
 from rest_framework import viewsets, mixins
 
-from chat.models import Thread
-from chat.serializers import ThreadSerializer, ThreadListSerializer
+from chat.models import Thread, Message
+from chat.serializers import ThreadSerializer, ThreadListSerializer, MessageSerializer, MessageCreateSerializer
 
 
 class ThreadViewSet(
@@ -50,3 +50,21 @@ class ThreadViewSet(
         second_participant = self.request.user
 
         serializer.save(participants=[first_participant, second_participant])
+
+
+class MessageViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    viewsets.GenericViewSet
+):
+    queryset = Message.objects.all()
+    serializer_class = MessageSerializer
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return MessageCreateSerializer
+
+        return self.serializer_class
+
+    def perform_create(self, serializer):
+        serializer.save(thread_id=self.kwargs.get("pk"), sender=self.request.user)

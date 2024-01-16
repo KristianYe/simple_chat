@@ -12,6 +12,13 @@ class MessageSerializer(serializers.ModelSerializer):
         fields = ("id", "sender", "text", "thread", "created", "is_read")
 
 
+class MessageCreateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Message
+        fields = ("text", )
+
+
 class ThreadSerializer(serializers.ModelSerializer):
 
     class Meta:
