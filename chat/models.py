@@ -22,4 +22,4 @@ class Message(models.Model):
         Thread, on_delete=models.CASCADE, related_name="messages"
     )
     created = models.DateTimeField(auto_now_add=True)
-    is_read = models.BooleanField()
+    is_read = models.BooleanField(default=False)
