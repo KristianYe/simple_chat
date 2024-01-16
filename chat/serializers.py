@@ -19,6 +19,18 @@ class MessageCreateSerializer(serializers.ModelSerializer):
         fields = ("text", )
 
 
+class ReadMessagesSerializer(serializers.Serializer):
+    message_ids = serializers.ListField(child=serializers.IntegerField())
+
+    def validate_message_ids(self, value):
+        if not Message.objects.filter(id__in=value).exists():
+            raise serializers.ValidationError(
+                "One or more message IDs do not exist in the database."
+            )
+
+        return value
+
+
 class ThreadSerializer(serializers.ModelSerializer):
 
     class Meta:

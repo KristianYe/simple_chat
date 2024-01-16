@@ -1,9 +1,12 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import reverse, redirect
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from chat.models import Thread, Message
-from chat.serializers import ThreadSerializer, ThreadListSerializer, MessageSerializer, MessageCreateSerializer
+from chat.serializers import ThreadSerializer, ThreadListSerializer, MessageSerializer, MessageCreateSerializer, \
+    ReadMessagesSerializer
 
 
 class ThreadViewSet(
@@ -64,7 +67,29 @@ class MessageViewSet(
         if self.action == "create":
             return MessageCreateSerializer
 
+        if self.action == "read_messages":
+            return ReadMessagesSerializer
+
         return self.serializer_class
 
     def perform_create(self, serializer):
         serializer.save(thread_id=self.kwargs.get("pk"), sender=self.request.user)
+
+    @action(
+        methods=["POST"],
+        detail=False,
+        url_path="read",
+    )
+    def read_messages(self, request, pk=None):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        message_ids = serializer.validated_data["message_ids"]
+
+        messages = Message.objects.filter(id__in=message_ids, is_read=False)
+        messages.update(is_read=True)
+
+        return Response({
+            "message": "Messages marked as read successfully."
+        },
+            status=status.HTTP_200_OK)

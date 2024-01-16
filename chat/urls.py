@@ -20,11 +20,16 @@ messages = MessageViewSet.as_view(actions={
     "post": "create",
 })
 
+read_messages = MessageViewSet.as_view(actions={
+    "post": "read_messages",
+})
+
 urlpatterns = [
     path("threads/", thread_list, name="thread-list"),
     path("threads/create/", thread_create, name="thread-create"),
     path("threads/<int:pk>/", thread_detail, name="thread-detail"),
     path("threads/<int:pk>/messages/", messages, name="messages"),
+    path("threads/<int:pk>/messages/read/", read_messages, name="read-messages"),
 ]
 
 app_name = "chat"
