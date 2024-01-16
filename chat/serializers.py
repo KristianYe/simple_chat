@@ -13,16 +13,16 @@ class MessageSerializer(serializers.ModelSerializer):
 
 
 class ThreadSerializer(serializers.ModelSerializer):
-    participants = UserSerializer(many=True, read_only=True)
 
     class Meta:
         model = Thread
-        fields = ('id', 'participants', 'created', 'updated')
+        fields = ("id", "participants", "created", "updated")
 
 
-class ThreadListSerializer(ThreadSerializer):
+class ThreadListSerializer(serializers.ModelSerializer):
+    participants = UserSerializer(many=True, read_only=True)
     last_message = MessageSerializer(read_only=True)
 
     class Meta:
         model = Thread
-        fields = ('id', 'participants', 'created', 'updated', 'last_message')
+        fields = ("id", "participants", "created", "updated", "last_message")
