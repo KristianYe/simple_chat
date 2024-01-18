@@ -1,8 +1,8 @@
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Count
 from django.shortcuts import reverse, redirect
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -20,6 +20,7 @@ class ThreadViewSet(
 ):
     queryset = Thread.objects.all()
     serializer_class = ThreadSerializer
+    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
         queryset = self.queryset
@@ -64,6 +65,7 @@ class MessageViewSet(
 ):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
+    permission_classes = (IsAuthenticated,)
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -98,8 +100,9 @@ class MessageViewSet(
 
 
 class UnreadMessagesCountView(APIView):
-    def get(self, request, *args, **kwargs):
+    permission_classes = (IsAuthenticated, )
 
+    def get(self, request, *args, **kwargs):
         user = request.user
 
         unread_count = (
