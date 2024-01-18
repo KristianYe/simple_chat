@@ -1,6 +1,6 @@
 from django.urls import path
 
-from chat.views import ThreadViewSet, MessageViewSet
+from chat.views import ThreadViewSet, MessageViewSet, UnreadMessagesCountView
 
 thread_list = ThreadViewSet.as_view(actions={
     "get": "list",
@@ -30,6 +30,7 @@ urlpatterns = [
     path("threads/<int:pk>/", thread_detail, name="thread-detail"),
     path("threads/<int:pk>/messages/", messages, name="messages"),
     path("threads/<int:pk>/messages/read/", read_messages, name="read-messages"),
+    path('unread-messages-count/', UnreadMessagesCountView.as_view(), name="unread-messages-count")
 ]
 
 app_name = "chat"

@@ -1,8 +1,10 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Count
 from django.shortcuts import reverse, redirect
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from chat.models import Thread, Message
 from chat.serializers import ThreadSerializer, ThreadListSerializer, MessageSerializer, MessageCreateSerializer, \
@@ -93,3 +95,18 @@ class MessageViewSet(
             "message": "Messages marked as read successfully."
         },
             status=status.HTTP_200_OK)
+
+
+class UnreadMessagesCountView(APIView):
+    def get(self, request, *args, **kwargs):
+
+        user = request.user
+
+        unread_count = (
+            Message.objects
+            .filter(thread__participants=user, is_read=False)
+            .exclude(sender=user)
+            .count()
+        )
+
+        return Response({"unread_count": unread_count}, status=status.HTTP_200_OK)
