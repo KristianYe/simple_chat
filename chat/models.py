@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from rest_framework.exceptions import ValidationError
 
 
 class Thread(models.Model):

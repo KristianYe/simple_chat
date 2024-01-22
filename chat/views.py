@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from chat.models import Thread, Message
 from chat.permissions import CanAccessThread
 from chat.serializers import ThreadSerializer, ThreadListSerializer, MessageSerializer, MessageCreateSerializer, \
-    ReadMessagesSerializer
+    ReadMessagesSerializer, ThreadCreateSerializer
 
 
 class ThreadViewSet(
@@ -37,37 +37,38 @@ class ThreadViewSet(
     def get_serializer_class(self):
         if self.action == "list":
             return ThreadListSerializer
+        if self.action == "create":
+            return ThreadCreateSerializer
 
         return self.serializer_class
 
     def create(self, request, *args, **kwargs):
-        participants = request.data.get("participants")
+        participant_id = request.data.get("participant_id")
+        user_id = request.user.id
 
         try:
-            thread = Thread.objects.get(participants=participants)
-        except ObjectDoesNotExist:
+            if int(participant_id) == user_id:
+                return Response(
+                    {"error": "You can't create a thread with yourself"},
+                    status.HTTP_400_BAD_REQUEST
+                )
+        except ValueError:
+            return Response(
+                {"error": "Please enter only 1 participant's id"},
+                status.HTTP_400_BAD_REQUEST
+            )
+
+        thread = (
+            Thread.objects.filter(participants=int(participant_id))
+            .filter(participants=user_id).first()
+        )
+
+        if thread is None:
             return super().create(request, *args, **kwargs)
 
         thread_detail_url = reverse("chat:thread-detail", kwargs={"pk": thread.pk})
 
         return redirect(thread_detail_url)
-
-    # def retrieve(self, request, *args, **kwargs):
-    #     instance = self.get_object()
-    #
-    #     user = request.user
-    #     if user not in instance.participants.all():
-    #         return Response({"error": "You are not a participant in this thread"}, status.HTTP_403_FORBIDDEN)
-    #
-    #     serializer = self.get_serializer(instance)
-    #     return Response(serializer.data)
-
-
-    def perform_create(self, serializer):
-        first_participant = self.request.data.get("participants", None)
-        second_participant = self.request.user
-
-        serializer.save(participants=[first_participant, second_participant])
 
 
 class MessageViewSet(

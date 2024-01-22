@@ -1,3 +1,5 @@
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
 from chat.models import Thread, Message
@@ -45,3 +47,27 @@ class ThreadListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Thread
         fields = ("id", "participants", "created", "updated", "last_message")
+
+
+class ThreadCreateSerializer(serializers.Serializer):
+    participant_id = serializers.IntegerField()
+
+    def validate_participant_id(self, value):
+        if value == self.context["request"].user.id:
+            raise serializers.ValidationError("You can't create a thread with yourself")
+
+        try:
+            get_user_model().objects.get(id=value)
+        except ObjectDoesNotExist:
+            raise serializers.ValidationError(f"There is no user with id {value}")
+
+        return value
+
+    def save(self):
+        user_id = self.context["request"].user.id
+        participant_id = self.validated_data["participant_id"]
+
+        thread = Thread.objects.create()
+        thread.participants.set([user_id, participant_id])
+
+        return thread
