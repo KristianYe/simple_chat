@@ -1,4 +1,3 @@
-from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import reverse, redirect
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
@@ -7,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from chat.models import Thread, Message
-from chat.permissions import CanAccessThread
+from chat.permissions import CanAccessThread, CanAccessMessages
 from chat.serializers import ThreadSerializer, ThreadListSerializer, MessageSerializer, MessageCreateSerializer, \
     ReadMessagesSerializer, ThreadCreateSerializer
 
@@ -78,7 +77,15 @@ class MessageViewSet(
 ):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (CanAccessMessages,)
+
+    def get_queryset(self):
+        queryset = self.queryset
+
+        if self.action == "list":
+            queryset = self.queryset.filter(thread_id=self.kwargs.get("pk"))
+
+        return queryset
 
     def get_serializer_class(self):
         if self.action == "create":
