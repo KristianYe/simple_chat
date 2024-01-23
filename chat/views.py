@@ -1,4 +1,4 @@
-from django.db.models import OuterRef, Subquery, ForeignKey
+from django.db.models import OuterRef, Subquery
 from django.shortcuts import reverse, redirect
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action

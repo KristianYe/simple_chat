@@ -7,4 +7,3 @@ urlpatterns = [
     path("api/chat/", include("chat.urls", namespace="chat")),
     path("api/user/", include("user.urls", namespace="user")),
 ]
-

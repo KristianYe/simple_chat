@@ -15,10 +15,9 @@ class MessageSerializer(serializers.ModelSerializer):
 
 
 class MessageCreateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Message
-        fields = ("text", )
+        fields = ("text",)
 
 
 class ReadMessagesSerializer(serializers.Serializer):
@@ -34,7 +33,6 @@ class ReadMessagesSerializer(serializers.Serializer):
 
 
 class ThreadSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Thread
         fields = ("id", "participants", "created", "updated")
@@ -56,7 +54,9 @@ class ThreadCreateSerializer(serializers.Serializer):
         try:
             get_user_model().objects.get(id=value)
         except ObjectDoesNotExist:
-            raise serializers.ValidationError(f"There is no user with id {value}")
+            raise serializers.ValidationError(
+                f"There is no user with id {value}"
+            )
 
         return value
 
