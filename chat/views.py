@@ -7,8 +7,14 @@ from rest_framework.views import APIView
 
 from chat.models import Thread, Message
 from chat.permissions import CanAccessThread, CanAccessMessages
-from chat.serializers import ThreadSerializer, ThreadListSerializer, MessageSerializer, MessageCreateSerializer, \
-    ReadMessagesSerializer, ThreadCreateSerializer
+from chat.serializers import (
+    ThreadSerializer,
+    ThreadListSerializer,
+    MessageSerializer,
+    MessageCreateSerializer,
+    ReadMessagesSerializer,
+    ThreadCreateSerializer,
+)
 
 
 class ThreadViewSet(
@@ -16,7 +22,7 @@ class ThreadViewSet(
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.DestroyModelMixin,
-    viewsets.GenericViewSet
+    viewsets.GenericViewSet,
 ):
     queryset = Thread.objects.all()
     serializer_class = ThreadSerializer
@@ -46,34 +52,31 @@ class ThreadViewSet(
         user_id = request.user.id
 
         try:
-            if int(participant_id) == user_id:
+            if int(participant_id) == user_id:  # checking for uniqueness of IDs
                 return Response(
                     {"error": "You can't create a thread with yourself"},
                     status.HTTP_400_BAD_REQUEST
                 )
-        except ValueError:
+        except ValueError:  # error handling if the IDs were specified incorrectly
             return Response(
                 {"error": "Please enter only 1 participant's id"},
-                status.HTTP_400_BAD_REQUEST
+                status.HTTP_400_BAD_REQUEST,
             )
 
-        thread = (
-            Thread.objects.filter(participants=int(participant_id))
-            .filter(participants=user_id).first()
-        )
-
-        if thread is None:
+        try:  # check if thread with specified participants exists
+            thread = Thread.objects.get(participants__exact=(int(participant_id), user_id))
+        except Thread.DoesNotExist:  # if thread doesn't exist, view creates a new one
             return super().create(request, *args, **kwargs)
 
-        thread_detail_url = reverse("chat:thread-detail", kwargs={"pk": thread.pk})
+        thread_detail_url = reverse(
+            "chat:thread-detail", kwargs={"pk": thread.pk}
+        )  # if thread exists, view redirects user to thread's detail page
 
         return redirect(thread_detail_url)
 
 
 class MessageViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    viewsets.GenericViewSet
+    mixins.ListModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet
 ):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
@@ -97,7 +100,9 @@ class MessageViewSet(
         return self.serializer_class
 
     def perform_create(self, serializer):
-        serializer.save(thread_id=self.kwargs.get("pk"), sender=self.request.user)
+        serializer.save(
+            thread_id=self.kwargs.get("pk"), sender=self.request.user
+        )
 
     @action(
         methods=["POST"],
@@ -113,23 +118,24 @@ class MessageViewSet(
         messages = Message.objects.filter(id__in=message_ids, is_read=False)
         messages.update(is_read=True)
 
-        return Response({
-            "message": "Messages marked as read successfully."
-        },
-            status=status.HTTP_200_OK)
+        return Response(
+            {"message": "Messages marked as read successfully."},
+            status=status.HTTP_200_OK,
+        )
 
 
 class UnreadMessagesCountView(APIView):
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
         user = request.user
 
         unread_count = (
-            Message.objects
-            .filter(thread__participants=user, is_read=False)
+            Message.objects.filter(thread__participants=user, is_read=False)
             .exclude(sender=user)
             .count()
         )
 
-        return Response({"unread_count": unread_count}, status=status.HTTP_200_OK)
+        return Response(
+            {"unread_count": unread_count}, status=status.HTTP_200_OK
+        )

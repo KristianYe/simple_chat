@@ -53,9 +53,6 @@ class ThreadCreateSerializer(serializers.Serializer):
     participant_id = serializers.IntegerField()
 
     def validate_participant_id(self, value):
-        if value == self.context["request"].user.id:
-            raise serializers.ValidationError("You can't create a thread with yourself")
-
         try:
             get_user_model().objects.get(id=value)
         except ObjectDoesNotExist:
