@@ -1,3 +1,4 @@
+from django.db.models import OuterRef, Subquery, ForeignKey
 from django.shortcuts import reverse, redirect
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
@@ -32,10 +33,17 @@ class ThreadViewSet(
         queryset = self.queryset
 
         if self.action == "list":
+            subquery = (
+                Message.objects.filter(thread=OuterRef("pk"))
+                .order_by("-created")
+                .values("text")[:1]
+            )  # subquery for retrieving last message for each thread
+
+            queryset = queryset.annotate(last_message=Subquery(subquery))
             queryset = queryset.filter(participants=self.request.user)
-            for thread in queryset:
-                last_message = thread.messages.last()
-                thread.last_message = last_message
+
+        if self.action in ("retrieve", "list"):
+            queryset = queryset.prefetch_related("participants")
 
         return queryset
 
@@ -52,20 +60,28 @@ class ThreadViewSet(
         user_id = request.user.id
 
         try:
-            if int(participant_id) == user_id:  # checking for uniqueness of IDs
+            if (
+                int(participant_id) == user_id
+            ):  # checking for uniqueness of IDs
                 return Response(
                     {"error": "You can't create a thread with yourself"},
-                    status.HTTP_400_BAD_REQUEST
+                    status.HTTP_400_BAD_REQUEST,
                 )
-        except ValueError:  # error handling if the IDs were specified incorrectly
+        except (
+            ValueError
+        ):  # error handling if the IDs were specified incorrectly
             return Response(
                 {"error": "Please enter only 1 participant's id"},
                 status.HTTP_400_BAD_REQUEST,
             )
 
         try:  # check if thread with specified participants exists
-            thread = Thread.objects.get(participants__exact=(int(participant_id), user_id))
-        except Thread.DoesNotExist:  # if thread doesn't exist, view creates a new one
+            thread = Thread.objects.get(
+                participants__exact=(int(participant_id), user_id)
+            )
+        except (
+            Thread.DoesNotExist
+        ):  # if thread doesn't exist, view creates a new one
             return super().create(request, *args, **kwargs)
 
         thread_detail_url = reverse(
@@ -86,7 +102,8 @@ class MessageViewSet(
         queryset = self.queryset
 
         if self.action == "list":
-            queryset = self.queryset.filter(thread_id=self.kwargs.get("pk"))
+            queryset = queryset.filter(thread_id=self.kwargs.get("pk"))
+            queryset = queryset.select_related("thread", "sender")
 
         return queryset
 

@@ -42,7 +42,7 @@ class ThreadSerializer(serializers.ModelSerializer):
 
 class ThreadListSerializer(serializers.ModelSerializer):
     participants = UserSerializer(many=True, read_only=True)
-    last_message = MessageSerializer(read_only=True)
+    last_message = serializers.CharField()
 
     class Meta:
         model = Thread

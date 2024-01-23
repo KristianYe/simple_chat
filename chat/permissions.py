@@ -16,10 +16,8 @@ class CanAccessThread(IsAuthenticated):
 class CanAccessMessages(BasePermission):
     def has_permission(self, request, view):
         thread_id = view.kwargs["pk"]
-        try:
-            thread = Thread.objects.get(id=thread_id)
-        except ObjectDoesNotExist:
-            return False
+        thread = Thread.objects.filter(id=thread_id).first()
         return bool(thread and request.user in thread.participants.all())
+
 
 
